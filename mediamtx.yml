@@ -1,0 +1,60 @@
+# rtsp-keypoint standalone MediaMTX configuration.
+# Credentials and the viewer path prefix are injected by docker-compose.yml through indexed MTX_* variables.
+# The authInternalUsers order is security-sensitive: 1=backend, 2=viewer_rtsp_keypoint.
+
+logLevel: error
+logDestinations: [stdout]
+
+authInternalUsers:
+  # [0] Local runOnDemand ffmpeg publish/republish only.
+  - user: any
+    pass:
+    ips: ['127.0.0.1', '::1']
+    permissions:
+      - action: publish
+      - action: read
+      - action: playback
+  # [1] Backend control plane and stream management.
+  - user: backend
+    pass: changeme          # MTX_AUTHINTERNALUSERS_1_PASS
+    permissions:
+      - action: api
+      - action: publish
+      - action: read
+      - action: playback
+  # [2] Browser viewer, restricted to this module's path prefix.
+  - user: viewer_rtsp_keypoint
+    pass: changeme          # MTX_AUTHINTERNALUSERS_2_PASS
+    permissions:
+      - action: read
+        path: ~^rtsp_keypoint__
+      - action: playback
+        path: ~^rtsp_keypoint__
+
+api: yes
+apiAddress: :9997
+apiAllowOrigins: ['*']
+
+rtsp: yes
+rtspAddress: :8554
+
+webrtc: yes
+webrtcAddress: :8889
+webrtcEncryption: no
+webrtcLocalUDPAddress: :8189
+webrtcAllowOrigins: ['*']
+webrtcAdditionalHosts: []
+
+hls: no
+rtmp: no
+srt: no
+moq: no
+playback: no
+metrics: no
+pprof: no
+
+pathDefaults:
+  runOnDemandCloseAfter: 10s
+  runOnDemandStartTimeout: 10s
+
+paths: {}

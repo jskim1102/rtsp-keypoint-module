@@ -1,0 +1,368 @@
+/* 평범한 데모 베이스라인 — 디자인토큰/CSS 변수 없음, 라이트 단일 팔레트.
+   phase4 dev 가 테이블/폼/모달/그리드에 쓸 베이스 클래스만 제공. */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+    "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1f2937;
+  background: #f9fafb;
+}
+
+/* 레이아웃 */
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 22px;
+}
+
+.subtitle {
+  margin: 0;
+  color: #6b7280;
+}
+
+/* 테이블 — 목록/CRUD */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+th,
+td {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+th {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+
+tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+/* 버튼 */
+button {
+  font: inherit;
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+button.primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+button.danger {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+button.danger:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+/* 폼 */
+label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+input,
+select {
+  font: inherit;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+/* 모달 — 등록 폼 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  padding: 20px;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.modal h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* NxN 그리드 플레이어 — columns 는 inline style 로 주입 */
+.grid {
+  display: grid;
+  gap: 8px;
+}
+
+.grid-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #e5e7eb; /* 회색 placeholder — phase4 에서 JPEG 플레이어로 교체 시 #000 */
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+/* WHEP placeholder — phase4 WhepPlayer 가 video.srcObject 주입.
+   실 스트림 들어오면 회색 → 검정, 라벨은 위에 떠있음. */
+.grid-cell-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #e5e7eb;
+}
+
+.grid-cell-nosignal {
+  position: relative;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* 페이지 헤더 — 제목 + 등록 버튼 */
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+/* 요약 스트립 — 전체/온라인 (phase4 stats polling 이 채움) */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  margin-bottom: 20px;
+}
+
+.summary-cell {
+  padding: 12px 16px;
+  border-right: 1px solid #e5e7eb;
+}
+
+.summary-cell:last-child {
+  border-right: none;
+}
+
+.summary-label {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.summary-value {
+  font-size: 28px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.summary-sub {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* 테이블 셀 */
+.cam-id {
+  font-size: 11px;
+  color: #9ca3af;
+  letter-spacing: 0.05em;
+}
+
+.cam-name {
+  font-weight: 500;
+}
+
+.url-cell {
+  font-size: 12px;
+  color: #6b7280;
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 상태 표시 — phase4 stats.active 가 토글 */
+.status {
+  font-size: 12px;
+}
+
+.status-on {
+  color: #16a34a;
+}
+
+.status-off {
+  color: #9ca3af;
+}
+
+/* 폼 힌트 / 에러 */
+.hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.form-error {
+  margin: 0;
+  font-size: 12px;
+  color: #dc2626;
+}
+
+/* 전역 GPU duty ceiling — 카메라별 자동 keypoint FPS 배분의 최종 상한 */
+.gpu-util-control {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(260px, 2fr) 92px;
+  align-items: center;
+  gap: 20px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.gpu-util-copy label {
+  margin: 0;
+  font-weight: 600;
+}
+
+.gpu-util-copy p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.gpu-util-slider {
+  display: grid;
+  grid-template-columns: 1fr 48px;
+  align-items: center;
+  gap: 10px;
+}
+
+.gpu-util-slider input[type="range"] {
+  padding: 0;
+  accent-color: #2563eb;
+}
+
+.gpu-util-slider output {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+}
+
+.gpu-util-duty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.gpu-util-duty span {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.gpu-util-duty strong {
+  font-size: 18px;
+  color: #16a34a;
+}
+
+@media (max-width: 720px) {
+  .gpu-util-control {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .gpu-util-duty {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+}
+
+/* 라이브 그리드 섹션 — 다크 full-width 밴드 (제어패널 흰영역과 시각 구분) */
+.live-section {
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  margin-top: 28px;
+  padding: 16px 0 20px;
+  background: #111827;
+}
+
+/* 그리드 섹션 */
+.grid-heading {
+  margin: 0 0 12px;
+  padding: 0 16px;
+  font-size: 16px;
+  color: #fff;
+}
+
+.grid-empty {
+  color: #9ca3af;
+}

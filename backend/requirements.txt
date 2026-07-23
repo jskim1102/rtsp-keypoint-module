@@ -1,0 +1,22 @@
+# rtsp-detection backend deps — rtsp-streaming base(WebRTC/mediamtx control plane + CRUD/DB)
+# + deepeye-lite detection(YOLO 추론 별도 프로세스 + RTSP 캡처).
+# 버전은 .sources/ai-monitoring(streaming) + .sources/deepeye-lite(detection) 정본에서 가져옴; alembic/pytest 는 net-new(미고정).
+fastapi==0.135.2
+uvicorn==0.42.0
+sqlalchemy==2.0.48
+pydantic==2.12.5
+python-dotenv==1.2.2
+httpx==0.28.1
+alembic
+pytest
+
+# detection (deepeye-lite 차용) — YOLO 추론 + RTSP 캡처. torch 는 PyPI 기본 휠이
+# Linux x86_64 에서 CUDA cu12 런타임 휠을 함께 끌어옴(GPU 자동사용, 미존재 시 CPU 폴백).
+# opencv 는 headless(서버/컨테이너 X11 비의존). multipart=custom .pt 업로드, websockets=detection WS.
+ultralytics==8.4.41
+torch==2.7.1
+torchvision==0.22.1
+opencv-python-headless==4.13.0.92
+numpy==2.4.4
+python-multipart==0.0.27
+websockets==16.0

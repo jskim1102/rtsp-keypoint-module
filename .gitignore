@@ -1,0 +1,39 @@
+# env (실값/시크릿 — git 에 안 올림, RULES §4.1. .env.example 만 올림)
+.env
+backend/.env
+
+# 하네스 인프라 (add-cto 설치 — 모듈 deliverable 아님, git 제외. 디스크엔 유지)
+.claude/
+
+# 내부 빌드 입력/기록 (공개 불필요) — specs 전체(USAGE.md 포함) + plan.md
+plan.md
+specs/
+
+# python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# DB (경로 무관 — 글로벌)
+*.db
+*.sqlite
+*.sqlite3
+
+# node
+node_modules/
+dist/
+
+# misc
+.DS_Store
+*.log
+.gstack/
+
+# host dev runner (./dev.sh)
+.dev.pids
+.dev-logs/
+
+# detection — custom .pt 업로드(런타임 산출) + YOLO 가중치 캐시 (소스 아님)
+*.pt
+backend/models/

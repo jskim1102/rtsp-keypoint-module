@@ -1,0 +1,31 @@
+# rtsp-keypoint — NVIDIA GPU 패스스루 override.
+#
+# 단독으로는 의미 없고, 기본 docker-compose.yml 위에 머지되어 backend 컨테이너에 호스트 GPU
+# 접근 권한 + YOLO_DEVICE=cuda:0 강제 + YOLO 가중치 캐시 볼륨을 추가한다.
+# **Linux + NVIDIA Driver + nvidia-container-toolkit** 호스트 전용.
+#
+# 사용:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+#
+# 이 override 가 없으면 backend 는 자동 CPU 폴백(워커가 torch.cuda.is_available() 으로 GPU 부재 감지).
+# Mac/Windows·GPU 없는 Linux 에는 적용하지 말 것.
+
+services:
+  backend:
+    # NVIDIA GPU 접근 권한 — Compose v2 표준 문법.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all          # 모든 GPU 노출. 특정 GPU 만 쓰려면 device_ids 사용.
+              capabilities: [gpu]
+    environment:
+      # .env 의 YOLO_DEVICE 가 빈값이면 워커가 자동감지 → cuda:0. 명시적으로 cuda:0 강제(CPU 폴백 차단).
+      YOLO_DEVICE: cuda:0
+    volumes:
+      # YOLO 가중치 캐시 — 컨테이너 재시작 시 매번 재다운로드 방지(ultralytics 기본 캐시 경로).
+      - yolo_weights:/root/.cache/ultralytics
+
+volumes:
+  yolo_weights:

@@ -1,0 +1,104 @@
+# rtsp-keypoint v2 — standalone 3컨테이너(backend + frontend + mediamtx)
+#
+# 실행:   docker compose up --build                                  (CPU/auto)
+#         docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build   (NVIDIA GPU)
+# 종료:   docker compose down
+#
+# 환경변수: 같은 디렉토리의 `.env` 를 compose 가 자동으로 읽어 ${VAR} 로 치환.
+#          (없으면 오류. `.env.example` 복사해서 만들어야 함.)
+# 브라우저 접속: http://<서버IP>:${FRONTEND_PORT}  (frontend)
+
+services:
+  # ─────────────────────────────── Backend ───────────────────────────────
+  backend:
+    build:
+      context: ./backend
+    image: rtsp-keypoint-backend:dev
+    container_name: rtsp-keypoint-backend
+    environment:
+      # SQLite DB 를 named volume 으로 — config.py 기본 경로 대신 override (spec Decision).
+      DATABASE_URL: sqlite:////app/data/ipcam.db
+      # config.py 가 읽는 등록 cap. 비우면 config 기본 16.
+      MAX_IPCAMS: ${MAX_IPCAMS:-16}
+      # standalone mediamtx API. 별도 인스턴스를 쓸 때만 .env 로 override.
+      MEDIAMTX_API: ${MEDIAMTX_API:-http://mediamtx:9997}
+      # path 네임스페이스 prefix — stream_key 가 `rtsp_keypoint__ipcam-*` 로 생성(프로젝트간 교차열람 차단).
+      MEDIAMTX_PATH_PREFIX: ${MEDIAMTX_PATH_PREFIX:-rtsp_keypoint}
+      # mediamtx 인증 — backend user. API/publish/read.
+      MEDIAMTX_BACKEND_USER: ${MEDIAMTX_BACKEND_USER:-backend}
+      MEDIAMTX_BACKEND_PASS: ${MEDIAMTX_BACKEND_PASS:?set MEDIAMTX_BACKEND_PASS in .env}
+      # ── keypoint (YOLO pose 추론) ──
+      YOLO_DEFAULT_MODEL: ${YOLO_DEFAULT_MODEL:-yolo26n-pose.pt}
+      YOLO_CONF_THRESHOLD: ${YOLO_CONF_THRESHOLD:-0.5}
+      # YOLO_DEVICE 빈값 = 워커 자동감지(GPU→cuda:0/없으면 CPU). gpu override 가 cuda:0 강제.
+      YOLO_DEVICE: ${YOLO_DEVICE:-}
+    ports:
+      - "${BACKEND_PORT:?set BACKEND_PORT in .env}:8000"
+    volumes:
+      # SQLite DB 영속화 — named volume (원본 bind-mount `touch deepeye.db` 트랩 회피).
+      - ipcam_db:/app/data
+    networks:
+      - rtsp-keypoint
+    depends_on:
+      - mediamtx
+    restart: unless-stopped
+
+  # ─────────────────────────────── Frontend ──────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Vite 는 빌드 타임에 VITE_* 를 정적 인라인하므로 build.args 로 전달.
+        # 브라우저가 접속할 포트이므로 "호스트에 노출된" 포트 값을 넘긴다.
+        VITE_API_PORT: "${BACKEND_PORT}"
+        # WHEP 접속 포트 (mediamtx webrtc, 호스트 노출 포트).
+        VITE_MEDIAMTX_WEBRTC_PORT: "${MEDIAMTX_WEBRTC_PORT:?set MEDIAMTX_WEBRTC_PORT in .env}"
+        # WHEP 인증 — 브라우저가 viewer 자격증명으로 mediamtx read (빌드타임 인라인).
+        VITE_MEDIAMTX_VIEWER_USER: "${MEDIAMTX_VIEWER_USER:-viewer_rtsp_keypoint}"
+        VITE_MEDIAMTX_VIEWER_PASS: "${MEDIAMTX_VIEWER_PASS:?set MEDIAMTX_VIEWER_PASS in .env}"
+    image: rtsp-keypoint-frontend:dev
+    container_name: rtsp-keypoint-frontend
+    ports:
+      # 호스트 ${FRONTEND_PORT} → 컨테이너 80 (Nginx 기본 포트, 이미지 빌드시 고정)
+      - "${FRONTEND_PORT:?set FRONTEND_PORT in .env}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ─────────────────────────────── MediaMTX ──────────────────────────────
+  mediamtx:
+    image: bluenviron/mediamtx:1.19.1-ffmpeg
+    container_name: rtsp-keypoint-mediamtx
+    environment:
+      # 외부 WHEP 연결에 광고할 LAN/공인 IP. 비우면 Docker host 밖 ICE 연결이 실패할 수 있다.
+      MTX_WEBRTCADDITIONALHOSTS: ${MEDIAMTX_WEBRTC_HOST:-}
+      MTX_WEBRTCLOCALUDPADDRESS: ":${MEDIAMTX_ICE_UDP_PORT:?set MEDIAMTX_ICE_UDP_PORT in .env}"
+      # UDP 가 막힌 외부망(회사/카페 방화벽, 라우터 UDP 포워딩 불가)용 ICE TCP fallback — 같은 포트의 tcp.
+      MTX_WEBRTCLOCALTCPADDRESS: ":${MEDIAMTX_ICE_UDP_PORT:?set MEDIAMTX_ICE_UDP_PORT in .env}"
+      # mediamtx.yml authInternalUsers 순서와 강결합: 1=backend, 2=viewer_rtsp_keypoint.
+      MTX_AUTHINTERNALUSERS_1_USER: ${MEDIAMTX_BACKEND_USER:-backend}
+      MTX_AUTHINTERNALUSERS_1_PASS: ${MEDIAMTX_BACKEND_PASS:?set MEDIAMTX_BACKEND_PASS in .env}
+      MTX_AUTHINTERNALUSERS_2_USER: ${MEDIAMTX_VIEWER_USER:-viewer_rtsp_keypoint}
+      MTX_AUTHINTERNALUSERS_2_PASS: ${MEDIAMTX_VIEWER_PASS:?set MEDIAMTX_VIEWER_PASS in .env}
+      # path prefix override 도 viewer 권한 경계에 함께 반영한다.
+      MTX_AUTHINTERNALUSERS_2_PERMISSIONS_0_PATH: "~^${MEDIAMTX_PATH_PREFIX:-rtsp_keypoint}__"
+      MTX_AUTHINTERNALUSERS_2_PERMISSIONS_1_PATH: "~^${MEDIAMTX_PATH_PREFIX:-rtsp_keypoint}__"
+    ports:
+      # API 는 backend control plane 용이라 host loopback 에만 노출한다.
+      - "127.0.0.1:${MEDIAMTX_API_PORT:?set MEDIAMTX_API_PORT in .env}:9997"
+      - "${MEDIAMTX_RTSP_PORT:?set MEDIAMTX_RTSP_PORT in .env}:8554"
+      - "${MEDIAMTX_WEBRTC_PORT:?set MEDIAMTX_WEBRTC_PORT in .env}:8889/tcp"
+      - "${MEDIAMTX_ICE_UDP_PORT:?set MEDIAMTX_ICE_UDP_PORT in .env}:${MEDIAMTX_ICE_UDP_PORT:?set MEDIAMTX_ICE_UDP_PORT in .env}/udp"
+      - "${MEDIAMTX_ICE_UDP_PORT:?set MEDIAMTX_ICE_UDP_PORT in .env}:${MEDIAMTX_ICE_UDP_PORT:?set MEDIAMTX_ICE_UDP_PORT in .env}/tcp"
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+    networks:
+      - rtsp-keypoint
+    restart: unless-stopped
+
+networks:
+  # Compose 가 프로젝트별 내부망을 자체 생성한다. 외부 harness 인프라가 필요 없다.
+  rtsp-keypoint:
+
+volumes:
+  ipcam_db:

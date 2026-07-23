@@ -1,0 +1,7 @@
+# 호스트 venv 가 이미지에 COPY 되면 uvicorn 깨짐 (poetry-venv-dockerignore-trap)
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+deepeye.db
+.env
