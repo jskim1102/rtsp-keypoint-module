@@ -44,11 +44,13 @@ RUN mkdir -p /root/.cache/ultralytics
 COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
-COPY docker-entrypoint.sh ./
-RUN sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh
+COPY --chmod=0755 docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh \
+    && sed -i '1s/^\xEF\xBB\xBF//' /app/docker-entrypoint.sh \
+    && chmod 0755 /app/docker-entrypoint.sh
 
 EXPOSE 8000
 
 # 기동 시 alembic upgrade head 로 스키마 적용 후 uvicorn (init_db create_all 아님).
-ENTRYPOINT ["./docker-entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/app/docker-entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -14,6 +14,7 @@ services:
     build:
       context: ./backend
     image: rtsp-keypoint-backend:dev
+    pull_policy: build
     container_name: rtsp-keypoint-backend
     environment:
       # SQLite DB 를 named volume 으로 — config.py 기본 경로 대신 override (spec Decision).
@@ -42,6 +43,12 @@ services:
               capabilities: [gpu]
     ports:
       - "${BACKEND_PORT:?set BACKEND_PORT in .env}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
     volumes:
       # SQLite DB 영속화 — named volume (원본 bind-mount `touch deepeye.db` 트랩 회피).
       - ipcam_db:/app/data
@@ -67,12 +74,14 @@ services:
         VITE_MEDIAMTX_VIEWER_USER: "${MEDIAMTX_VIEWER_USER:-viewer_rtsp_keypoint}"
         VITE_MEDIAMTX_VIEWER_PASS: "${MEDIAMTX_VIEWER_PASS:?set MEDIAMTX_VIEWER_PASS in .env}"
     image: rtsp-keypoint-frontend:dev
+    pull_policy: build
     container_name: rtsp-keypoint-frontend
     ports:
       # 호스트 ${FRONTEND_PORT} → 컨테이너 80 (Nginx 기본 포트, 이미지 빌드시 고정)
       - "${FRONTEND_PORT:?set FRONTEND_PORT in .env}:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   # ─────────────────────────────── MediaMTX ──────────────────────────────
