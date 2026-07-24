@@ -1,11 +1,12 @@
 {
-  "name": "rtsp-streaming-frontend",
+  "name": "rtsp-keypoint-frontend",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "test": "node scripts/run-tests.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

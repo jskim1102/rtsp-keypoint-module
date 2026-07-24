@@ -57,6 +57,7 @@ export default function CamerasPage() {
   );
   const [gpuUtilDutyPct, setGpuUtilDutyPct] = useState(0);
   const gpuUtilInitializedRef = useRef(false);
+  const gpuUtilUserTouchedRef = useRef(false);
   const gpuUtilUpdaterRef = useRef<GpuUtilTargetUpdater | null>(null);
 
   // ── detection 추론 컨트롤 (deepeye IpcamPage 차용, react-router 제외) ──
@@ -130,8 +131,10 @@ export default function CamerasPage() {
         setGpuUtilDutyPct(config.gpu_util_duty * 100);
         if (!gpuUtilInitializedRef.current) {
           gpuUtilInitializedRef.current = true;
-          gpuUtilUpdaterRef.current?.acceptServerTarget(config.gpu_util_target);
-          setGpuUtilTargetPct(Math.round(config.gpu_util_target * 100));
+          if (!gpuUtilUserTouchedRef.current) {
+            gpuUtilUpdaterRef.current?.acceptServerTarget(config.gpu_util_target);
+            setGpuUtilTargetPct(Math.round(config.gpu_util_target * 100));
+          }
         }
       } catch {
         // 카메라/pose 화면은 GPU 상태 endpoint 일시 실패와 독립적으로 유지한다.
@@ -474,6 +477,7 @@ export default function CamerasPage() {
             step="1"
             value={gpuUtilTargetPct}
             onChange={(event) => {
+              gpuUtilUserTouchedRef.current = true;
               setError("");
               setGpuUtilTargetPct(Number(event.target.value));
             }}

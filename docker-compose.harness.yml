@@ -1,8 +1,7 @@
 # rtsp-keypoint — 2컨테이너(backend + frontend) + 공유 mediamtx(harness-shared-mediamtx, 외부망, CEO #115)
 # base=rtsp-streaming(영상=WHEP) + deepeye-lite detection(YOLO 추론 별도 프로세스, backend 컨테이너 내).
 #
-# 실행:   docker compose up --build                                  (CPU/auto)
-#         docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build   (NVIDIA GPU)
+# 실행:   docker compose -f docker-compose.harness.yml up --build    (legacy shared-mediamtx variant)
 # 종료:   docker compose down
 #
 # 환경변수: 같은 디렉토리의 `.env` 를 compose 가 자동으로 읽어 ${VAR} 로 치환.

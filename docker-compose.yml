@@ -1,7 +1,7 @@
-# rtsp-keypoint v2 — standalone 3컨테이너(backend + frontend + mediamtx)
+# rtsp-keypoint — standalone 3컨테이너(backend + frontend + mediamtx)
+# base=rtsp-streaming(영상=WHEP) + pose keypoint(YOLO 추론 별도 프로세스, backend 컨테이너 내).
 #
-# 실행:   docker compose up --build                                  (CPU/auto)
-#         docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build   (NVIDIA GPU)
+# 실행:   docker compose up --build                                  (NVIDIA GPU 필수)
 # 종료:   docker compose down
 #
 # 환경변수: 같은 디렉토리의 `.env` 를 compose 가 자동으로 읽어 ${VAR} 로 치환.
@@ -27,16 +27,26 @@ services:
       # mediamtx 인증 — backend user. API/publish/read.
       MEDIAMTX_BACKEND_USER: ${MEDIAMTX_BACKEND_USER:-backend}
       MEDIAMTX_BACKEND_PASS: ${MEDIAMTX_BACKEND_PASS:?set MEDIAMTX_BACKEND_PASS in .env}
-      # ── keypoint (YOLO pose 추론) ──
+      # ── keypoint (YOLO pose 추론) — .env 값 전달(dev/docker 파리티). 빈값/미설정이면 config 기본.
       YOLO_DEFAULT_MODEL: ${YOLO_DEFAULT_MODEL:-yolo26n-pose.pt}
       YOLO_CONF_THRESHOLD: ${YOLO_CONF_THRESHOLD:-0.5}
-      # YOLO_DEVICE 빈값 = 워커 자동감지(GPU→cuda:0/없으면 CPU). gpu override 가 cuda:0 강제.
+      # GPU 전용 배포: passthrough 실패를 조용한 CPU 폴백으로 숨기지 않는다. .env override 가능.
       YOLO_DEVICE: ${YOLO_DEVICE:-}
+    # plain `docker compose up` 경로에서도 backend 에 NVIDIA GPU를 반드시 부여한다.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     ports:
       - "${BACKEND_PORT:?set BACKEND_PORT in .env}:8000"
     volumes:
       # SQLite DB 영속화 — named volume (원본 bind-mount `touch deepeye.db` 트랩 회피).
       - ipcam_db:/app/data
+      # YOLO 가중치 캐시 — 컨테이너 재시작 시 재다운로드 방지.
+      - yolo_weights:/root/.cache/ultralytics
     networks:
       - rtsp-keypoint
     depends_on:
@@ -102,3 +112,4 @@ networks:
 
 volumes:
   ipcam_db:
+  yolo_weights:
